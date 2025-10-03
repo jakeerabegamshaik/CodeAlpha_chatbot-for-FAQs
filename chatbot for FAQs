@@ -1,0 +1,53 @@
+import random
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Predefined FAQs and responses
+responses = {
+    "hi": ["Hello!", "Hi there!", "Hey! How can I help you?"],
+    "how are you": ["I'm good, thank you!", "I'm doing well, how about you?"],
+    "what is your name": ["I am a chatbot.", "I'm your friendly chatbot!"],
+    "bye": ["Goodbye!", "See you later!", "Have a great day!"],
+    "default": ["I'm sorry, I didn't understand that.", "Can you please rephrase?", "I don't quite understand."]
+}
+
+# Extract FAQ questions
+faq_questions = list(responses.keys())
+
+def get_response(user_input):
+    user_input = user_input.lower()
+
+    # If user says "bye" → end conversation
+    if "bye" in user_input:
+        return random.choice(responses["bye"]), True
+
+    # Vectorize FAQs + user input
+    vectorizer = TfidfVectorizer()
+    vectors = vectorizer.fit_transform(faq_questions + [user_input])
+
+    # Compute cosine similarity
+    similarity = cosine_similarity(vectors[-1], vectors[:-1])
+
+    # Find best match
+    best_match_index = similarity.argmax()
+    best_match_score = similarity[0, best_match_index]
+
+    # If similarity is strong enough → return matching response
+    if best_match_score > 0.2:   # threshold (adjustable)
+        key = faq_questions[best_match_index]
+        return random.choice(responses[key]), False
+    else:
+        return random.choice(responses["default"]), False
+
+def chatbot():
+    print("Chatbot: Hi! Type 'bye' to exit.")
+    
+    while True:
+        user_input = input("You: ")
+        response, end_chat = get_response(user_input)
+        print("Chatbot:", response)
+        if end_chat:
+            break
+
+# Run the chatbot
+chatbot()
